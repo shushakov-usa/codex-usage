@@ -46,9 +46,9 @@ function renderAccount(account) {
   badge.classList.add(account.connected ? 'connected' : 'empty');
 
   meta.appendChild(kv('ID', shortAccountId(account.accountId)));
-  meta.appendChild(kv('Plan', account.usage?.plan || account.planTypeFromJwt || '—'));
-  meta.appendChild(kv('Exp', fmtDate(account.expires)));
-  meta.appendChild(kv('Check', fmtDate(account.lastCheckedAt)));
+  meta.appendChild(kv('Тариф', account.usage?.plan || account.planTypeFromJwt || '—'));
+  meta.appendChild(kv('Токен до', fmtDate(account.expires)));
+  meta.appendChild(kv('Проверен', fmtDate(account.lastCheckedAt)));
 
   const windows = account.usage?.windows || [];
   if (windows.length) {
@@ -179,7 +179,19 @@ refreshAllBtn.addEventListener('click', async () => {
   const original = refreshAllBtn.textContent;
   refreshAllBtn.textContent = '⏳ Обновляю…';
   try {
-    await fetch('/api/refresh-all', { method: 'POST' });
+    const cards = cardsEl.querySelectorAll('.card');
+    const promises = [...cards].map(async (card) => {
+      const slot = card.querySelector('.slotTitle')?.textContent;
+      if (!slot) return;
+      const btn = card.querySelector('[data-action="refresh"]');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+      try {
+        await fetch(`/api/accounts/${slot}/refresh`, { method: 'POST' });
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Обновить'; }
+      }
+    });
+    await Promise.all(promises);
     await reload();
   } finally {
     refreshAllBtn.disabled = false;
