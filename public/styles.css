@@ -137,6 +137,29 @@ button.danger { border-color: rgba(255,107,107,.4); color: #ffb3b3; }
   font-size: 14px;
 }
 code { color: #b3d4ff; }
+.callback-paste {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.callback-paste p { margin: 0 0 6px; }
+.paste-row {
+  display: flex;
+  gap: 6px;
+}
+.paste-row input {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+}
+.paste-row button {
+  padding: 8px 14px;
+  font-size: 13px;
+}
 
 @media (max-width: 640px) {
   .wrap {

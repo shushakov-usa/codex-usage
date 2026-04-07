@@ -369,12 +369,12 @@ async function handleApi(req, res, url) {
     return json(res, 200, { ok: true, slot: slotName, accounts: getAccountsView() });
   }
 
-  const slotMatch = url.pathname.match(/^\/api\/accounts\/(slot\d+)\/(login|refresh|logout|delete)$/);
+  const slotMatch = url.pathname.match(/^\/api\/accounts\/(slot\d+)\/(login|refresh|logout|delete|exchange)$/);
   if (!slotMatch) return false;
 
   const [, slot, action] = slotMatch;
 
-  if (action !== 'login') {
+  if (action !== 'login' && action !== 'exchange') {
     const store = loadStore();
     if (!(slot in store.accounts)) {
       json(res, 404, { ok: false, error: 'Unknown slot' });
@@ -436,6 +436,55 @@ async function handleApi(req, res, url) {
     delete store.accounts[slot];
     saveStore(store);
     json(res, 200, { ok: true, slot, accounts: getAccountsView() });
+    return true;
+  }
+
+  if (action === 'exchange') {
+    const body = await parseBody(req);
+    const callbackUrl = String(body.url || '');
+    let parsed;
+    try {
+      parsed = new URL(callbackUrl);
+    } catch {
+      json(res, 400, { ok: false, error: 'Невалидный URL' });
+      return true;
+    }
+    const code = parsed.searchParams.get('code');
+    const state = parsed.searchParams.get('state');
+    if (!code || !state) {
+      json(res, 400, { ok: false, error: 'URL не содержит code или state' });
+      return true;
+    }
+    const pending = pendingLogins.get(state);
+    if (!pending) {
+      json(res, 400, { ok: false, error: 'Неизвестный или истёкший state' });
+      return true;
+    }
+    try {
+      const creds = await exchangeAuthorizationCode(code, pending.verifier);
+      const profile = getTokenProfile(creds.access);
+      const store = loadStore();
+      store.accounts[pending.slot] = {
+        slot: pending.slot,
+        access: creds.access,
+        refresh: creds.refresh,
+        expires: creds.expires,
+        accountId: creds.accountId,
+        email: profile.email,
+        planTypeFromJwt: profile.planTypeFromJwt,
+        usage: null,
+        updatedAt: Date.now(),
+        lastCheckedAt: null,
+        lastError: null,
+      };
+      saveStore(store);
+      pendingLogins.delete(state);
+      await refreshUsageForSlot(pending.slot);
+      json(res, 200, { ok: true, slot: pending.slot, accounts: getAccountsView() });
+    } catch (err) {
+      pendingLogins.delete(state);
+      json(res, 500, { ok: false, error: String(err?.message || err) });
+    }
     return true;
   }
 

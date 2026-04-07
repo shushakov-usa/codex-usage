@@ -79,6 +79,45 @@ function renderAccount(account) {
       return;
     }
     window.open(data.authUrl, '_blank', 'noopener,noreferrer');
+
+    const existing = node.querySelector('.callback-paste');
+    if (existing) existing.remove();
+
+    const box = document.createElement('div');
+    box.className = 'callback-paste';
+    box.innerHTML = `
+      <p>После авторизации вставьте URL из адресной строки:</p>
+      <div class="paste-row">
+        <input type="text" placeholder="http://localhost:1455/auth/callback?code=…" />
+        <button>OK</button>
+      </div>
+    `;
+    const input = box.querySelector('input');
+    const btn = box.querySelector('button');
+    btn.addEventListener('click', async () => {
+      const url = input.value.trim();
+      if (!url) return;
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      try {
+        const r = await fetch(`/api/accounts/${account.slot}/exchange`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const d = await r.json();
+        if (!r.ok || !d.ok) {
+          alert(d.error || 'Exchange failed');
+          return;
+        }
+        box.remove();
+        await reload();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'OK';
+      }
+    });
+    node.querySelector('.buttons').after(box);
   });
 
   node.querySelector('[data-action="refresh"]').addEventListener('click', async () => {
