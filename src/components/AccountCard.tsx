@@ -22,7 +22,7 @@ export function AccountCard({ account }: { account: Account }) {
   }
 
   return (
-    <article className="bg-surface rounded-xl p-4 hover:bg-surface-hover transition-colors duration-150 flex flex-col min-h-[340px]">
+    <article className="bg-surface rounded-xl p-4 hover:bg-surface-hover transition-colors duration-150 flex flex-col">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] font-semibold truncate">

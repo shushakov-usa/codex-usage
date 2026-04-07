@@ -17,11 +17,14 @@ export function History() {
   const accounts = accountsData?.accounts ?? []
   const snapshots = historyData?.snapshots ?? []
 
+  const rangeMsMap = { '24h': 86_400_000, '7d': 604_800_000, '30d': 2_592_000_000 } as const
+  const now = Date.now()
+  const rangeStart = now - rangeMsMap[range]
   const allTimestamps = snapshots.map(s => s.timestamp)
-  const timeDomain: [number, number] | undefined =
-    allTimestamps.length >= 2
-      ? [Math.min(...allTimestamps), Math.max(...allTimestamps)]
-      : undefined
+  const timeDomain: [number, number] = [
+    allTimestamps.length ? Math.min(rangeStart, Math.min(...allTimestamps)) : rangeStart,
+    allTimestamps.length ? Math.max(now, Math.max(...allTimestamps)) : now,
+  ]
 
   const accountChartData = accounts
     .filter(a => a.connected)
@@ -41,9 +44,7 @@ export function History() {
       return { email: account.email ?? account.slot, points }
     })
 
-  const dataSpanMs = timeDomain
-    ? timeDomain[1] - timeDomain[0]
-    : 0
+  const dataSpanMs = timeDomain[1] - timeDomain[0]
 
   const formatTime = (ts: number) => {
     const d = new Date(ts)
