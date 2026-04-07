@@ -14,13 +14,12 @@ const STORE_PATH = path.join(DATA_DIR, 'accounts.json');
 const PORT = Number(process.env.PORT || 1455);
 const HOST = process.env.HOST || '127.0.0.1';
 const OPENAI_PROXY = process.env.OPENAI_PROXY || '';
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 const CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 const AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
 const TOKEN_URL = 'https://auth.openai.com/oauth/token';
 const USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
-const REDIRECT_URI = `${BASE_URL}/auth/callback`;
+const REDIRECT_URI = `http://localhost:${PORT}/auth/callback`;
 const SCOPE = 'openid profile email offline_access';
 const JWT_CLAIM_PATH = 'https://api.openai.com/auth';
 const CONTENT_TYPES = {

@@ -18,7 +18,7 @@ npm start
 Или с параметрами:
 
 ```bash
-PORT=1455 BASE_URL=https://codex.example.com npm start
+PORT=1455 npm start
 ```
 
 ## Переменные окружения
@@ -27,16 +27,13 @@ PORT=1455 BASE_URL=https://codex.example.com npm start
 |---|---|---|
 | `PORT` | `1455` | Порт сервера |
 | `HOST` | `127.0.0.1` | Адрес для прослушивания |
-| `BASE_URL` | `http://localhost:$PORT` | Публичный URL (для OAuth redirect) |
 | `OPENAI_PROXY` | _(не задан)_ | HTTP-прокси для запросов к OpenAI |
 
-### Доступ через домен
+## OAuth и доступ через домен
 
-Если приложение за реверс-прокси (Caddy/nginx), задайте `BASE_URL` чтобы OAuth callback шёл на правильный адрес:
-
-```bash
-BASE_URL=https://codex.old.dedyn.io npm start
-```
+OAuth redirect URI привязан к `http://localhost:$PORT/auth/callback` (ограничение Codex OAuth client).
+При авторизации браузер будет перенаправлен на localhost — убедитесь что порт доступен
+(напрямую или через SSH tunnel: `ssh -L 1455:localhost:1455 server`).
 
 ## Важно
 
