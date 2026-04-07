@@ -44,12 +44,20 @@ export function History() {
       return { email: account.email ?? account.slot, points }
     })
 
+  const dataSpanMs = timeDomain
+    ? timeDomain[1] - timeDomain[0]
+    : 0
+
   const formatTime = (ts: number) => {
     const d = new Date(ts)
+    // If actual data spans less than 24h, always show time
+    if (dataSpanMs < 86_400_000) {
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    }
     if (range === '24h') {
       return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     }
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
   }
 
   return (
@@ -103,6 +111,7 @@ export function History() {
                       type="number"
                       domain={timeDomain}
                       tickFormatter={formatTime}
+                      allowDuplicatedCategory={false}
                       stroke="#6b7a8d"
                       fontSize={11}
                     />
