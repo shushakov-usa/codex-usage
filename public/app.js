@@ -8,6 +8,16 @@ function fmtDate(ts) {
   return new Date(ts).toLocaleString();
 }
 
+function fmtTimeLeft(ts) {
+  if (!ts) return '';
+  const diff = ts - Date.now();
+  if (diff <= 0) return 'now';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 function kv(label, value) {
   const div = document.createElement('div');
   div.className = 'kv';
@@ -56,11 +66,12 @@ function renderAccount(account) {
   if (windows.length) {
     for (const w of windows) {
       const left = Math.max(0, 100 - Number(w.usedPercent || 0));
+      const resetIn = fmtTimeLeft(w.resetAt);
       const box = document.createElement('div');
       box.className = 'window';
       box.innerHTML = `
         <div class="kv"><span class="label">${w.label}</span><span>${left.toFixed(0)}% left</span></div>
-        <div class="kv"><span class="label">Reset</span><span>${fmtDate(w.resetAt)}</span></div>
+        <div class="kv"><span class="label">Reset in</span><span>${resetIn}</span></div>
         <div class="progress"><span style="width:${left.toFixed(0)}%; background:${usageColor(w.usedPercent)}"></span></div>
       `;
       usage.appendChild(box);

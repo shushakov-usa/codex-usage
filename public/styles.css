@@ -55,8 +55,9 @@ body {
 }
 .headerText {
   min-width: 0;
+  overflow: hidden;
 }
-.slotTitle { margin: 0; font-size: 20px; }
+.slotTitle { margin: 0; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .accountTitle {
   margin-top: 4px;
   color: var(--muted);
