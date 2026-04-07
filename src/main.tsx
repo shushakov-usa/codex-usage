@@ -1,9 +1,24 @@
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
+import { App } from './App'
 import './index.css'
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2000,
+      retry: 1,
+    },
+  },
+})
+
 createRoot(document.getElementById('root')!).render(
-  <div className="p-6">
-    <h1 className="text-xl font-semibold">Codex Usage Dashboard</h1>
-    <p className="text-text-muted mt-2">Scaffolding works.</p>
-  </div>
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Toaster position="bottom-right" theme="dark" richColors />
+    </QueryClientProvider>
+  </StrictMode>
 )
