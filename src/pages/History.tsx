@@ -17,6 +17,12 @@ export function History() {
   const accounts = accountsData?.accounts ?? []
   const snapshots = historyData?.snapshots ?? []
 
+  const allTimestamps = snapshots.map(s => s.timestamp)
+  const timeDomain: [number, number] | undefined =
+    allTimestamps.length >= 2
+      ? [Math.min(...allTimestamps), Math.max(...allTimestamps)]
+      : undefined
+
   const accountChartData = accounts
     .filter(a => a.connected)
     .map(account => {
@@ -94,6 +100,8 @@ export function History() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e2a3a" />
                     <XAxis
                       dataKey="time"
+                      type="number"
+                      domain={timeDomain}
                       tickFormatter={formatTime}
                       stroke="#6b7a8d"
                       fontSize={11}
