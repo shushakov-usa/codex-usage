@@ -7,7 +7,7 @@ import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = path.join(__dirname, 'dist');
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'accounts.json');
 const PORT = Number(process.env.PORT || 1455);
