@@ -9,6 +9,12 @@ export interface UsageData {
   windows: QuotaWindow[]
 }
 
+export interface Entitlement {
+  active: boolean
+  plan: string | null
+  activeUntil: string | null
+}
+
 export interface Account {
   slot: string
   connected: boolean
@@ -20,6 +26,7 @@ export interface Account {
   updatedAt: number | null
   lastCheckedAt: number | null
   lastError: string | null
+  entitlement: Entitlement | null
 }
 
 export interface AccountsResponse {

@@ -22,6 +22,7 @@ const CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 const AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
 const TOKEN_URL = 'https://auth.openai.com/oauth/token';
 const USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
+
 const REDIRECT_URI = `http://localhost:${PORT}/auth/callback`;
 const SCOPE = 'openid profile email offline_access';
 const JWT_CLAIM_PATH = 'https://api.openai.com/auth';
@@ -194,6 +195,20 @@ function getTokenProfile(accessToken) {
   };
 }
 
+function extractEntitlementFromIdToken(idToken) {
+  if (!idToken) return null;
+  try {
+    const payload = decodeJwt(idToken);
+    const auth = payload?.[JWT_CLAIM_PATH] || {};
+    const plan = auth.chatgpt_plan_type || null;
+    const activeUntil = auth.chatgpt_subscription_active_until || null;
+    const active = plan && plan !== 'free' && !!activeUntil;
+    return { active, plan, activeUntil };
+  } catch {
+    return null;
+  }
+}
+
 function normalizeWindowLabel(windowHours) {
   if (windowHours >= 168) return 'Week';
   if (windowHours >= 24) return 'Day';
@@ -270,11 +285,13 @@ async function exchangeAuthorizationCode(code, verifier) {
   const accountId = getAccountId(json.access_token);
   if (!accountId) throw new Error('Failed to extract accountId from token');
 
+  const entitlement = extractEntitlementFromIdToken(json.id_token);
   return {
     access: json.access_token,
     refresh: json.refresh_token,
     expires: Date.now() + json.expires_in * 1000,
     accountId,
+    entitlement,
   };
 }
 
@@ -303,6 +320,7 @@ async function refreshAccount(account) {
   if (!accountId) throw new Error('Failed to extract accountId from refreshed token');
 
   const profile = getTokenProfile(json.access_token);
+  const entitlement = extractEntitlementFromIdToken(json.id_token);
   return {
     ...account,
     access: json.access_token,
@@ -311,6 +329,7 @@ async function refreshAccount(account) {
     accountId,
     email: profile.email || account.email || null,
     planTypeFromJwt: profile.planTypeFromJwt || account.planTypeFromJwt || null,
+    entitlement: entitlement || account.entitlement || null,
     updatedAt: Date.now(),
   };
 }
@@ -333,6 +352,7 @@ async function fetchUsage(account) {
   return toUsageSnapshot(await response.json());
 }
 
+
 async function refreshUsageForSlot(slot) {
   const store = loadStore();
   const account = store.accounts[slot];
@@ -342,7 +362,10 @@ async function refreshUsageForSlot(slot) {
 
   let working = { ...account };
   try {
-    if (!working.access || Date.now() >= Number(working.expires || 0)) {
+    const needsTokenRefresh = !working.access
+      || Date.now() >= Number(working.expires || 0)
+      || (working.entitlement && !('activeUntil' in working.entitlement));
+    if (needsTokenRefresh) {
       working = await refreshAccount(working);
     }
 
@@ -359,6 +382,7 @@ async function refreshUsageForSlot(slot) {
     }
 
     working.usage = usage;
+
     working.lastCheckedAt = Date.now();
     working.lastError = null;
     // Reload store to avoid overwriting parallel slot updates
@@ -391,6 +415,7 @@ function sanitizeAccount(slot, account) {
     updatedAt: account.updatedAt || null,
     lastCheckedAt: account.lastCheckedAt || null,
     lastError: account.lastError || null,
+    entitlement: account.entitlement || null,
   };
 }
 

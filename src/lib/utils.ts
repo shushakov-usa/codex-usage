@@ -55,3 +55,34 @@ export const STATUS_COLORS = {
   warn: { text: 'text-warn', bg: 'bg-warn' },
   bad: { text: 'text-bad', bg: 'bg-bad' },
 } as const
+
+export function formatSubscriptionStatus(entitlement: {
+  active: boolean
+  activeUntil: string | null
+} | null): { text: string; color: 'muted' | 'warn' | 'bad' } | null {
+  if (!entitlement || !entitlement.active || !entitlement.activeUntil) return null
+
+  const target = new Date(entitlement.activeUntil).getTime()
+  const now = Date.now()
+  const diffMs = target - now
+
+  if (diffMs <= 0) {
+    return { text: 'expired', color: 'bad' }
+  }
+
+  const diffDays = diffMs / 86_400_000
+  const color = diffDays <= 3 ? 'warn' : 'muted'
+
+  let timeStr: string
+  if (diffDays < 1) {
+    const hours = Math.max(1, Math.floor(diffMs / 3_600_000))
+    timeStr = `${hours}h left`
+  } else if (diffDays < 30) {
+    timeStr = `${Math.ceil(diffDays)}d left`
+  } else {
+    const d = new Date(entitlement.activeUntil)
+    timeStr = `until ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+  }
+
+  return { text: timeStr, color }
+}

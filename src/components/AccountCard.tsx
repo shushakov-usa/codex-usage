@@ -2,7 +2,7 @@ import { RefreshCw } from 'lucide-react'
 import type { Account } from '../types/api'
 import { QuotaBlock } from './QuotaBlock'
 import { KebabMenu } from './KebabMenu'
-import { formatRelativeTime } from '../lib/utils'
+import { formatRelativeTime, formatSubscriptionStatus } from '../lib/utils'
 import { useRefreshSlot } from '../lib/hooks'
 import { toast } from 'sonner'
 
@@ -12,6 +12,7 @@ export function AccountCard({ account }: { account: Account }) {
   const wShort = windows.find(w => /^\d+h$/.test(w.label))
   const wLong = windows.find(w => w !== wShort)
   const plan = account.usage?.plan ?? account.planTypeFromJwt
+  const subStatus = formatSubscriptionStatus(account.entitlement)
 
   const handleRefresh = async () => {
     try {
@@ -31,6 +32,11 @@ export function AccountCard({ account }: { account: Account }) {
           {plan && (
             <span className="text-[11px] uppercase tracking-wide text-text-muted">
               {plan}
+              {subStatus && (
+                <span className={subStatus.color === 'bad' ? 'text-bad' : subStatus.color === 'warn' ? 'text-warn' : ''}>
+                  {' · '}{subStatus.text}
+                </span>
+              )}
             </span>
           )}
         </div>
