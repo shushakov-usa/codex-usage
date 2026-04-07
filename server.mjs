@@ -40,7 +40,16 @@ if (OPENAI_PROXY) {
     proxyDispatcher = new ProxyAgent(OPENAI_PROXY);
     console.log(`Using OpenAI proxy: ${OPENAI_PROXY}`);
   } catch (err) {
-    console.warn(`ProxyAgent unavailable, falling back to direct fetch: ${String(err?.message || err)}`);
+    console.warn(`ProxyAgent unavailable: ${String(err?.message || err)}`);
+  }
+}
+if (!proxyDispatcher && (process.env.http_proxy || process.env.https_proxy)) {
+  try {
+    const { EnvHttpProxyAgent } = requireFromOpenClaw('undici');
+    proxyDispatcher = new EnvHttpProxyAgent();
+    console.log(`Using env proxy: ${process.env.https_proxy || process.env.http_proxy}`);
+  } catch (err) {
+    console.warn(`EnvHttpProxyAgent unavailable: ${String(err?.message || err)}`);
   }
 }
 
