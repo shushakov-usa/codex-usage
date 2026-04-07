@@ -482,6 +482,7 @@ async function handleApi(req, res, url) {
       await refreshUsageForSlot(pending.slot);
       json(res, 200, { ok: true, slot: pending.slot, accounts: getAccountsView() });
     } catch (err) {
+      console.error(`Exchange failed for ${pending.slot}:`, err?.message || err);
       pendingLogins.delete(state);
       json(res, 500, { ok: false, error: String(err?.message || err) });
     }

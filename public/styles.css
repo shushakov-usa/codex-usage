@@ -112,16 +112,19 @@ body {
   background: linear-gradient(90deg, #5dade2, #8e44ad);
 }
 .buttons {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-start;
+  gap: 6px;
 }
 button {
   background: #24324a;
   color: var(--text);
   border: 1px solid #334867;
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
 }
 button:hover { filter: brightness(1.08); }
 button.danger { border-color: rgba(255,107,107,.4); color: #ffb3b3; }
