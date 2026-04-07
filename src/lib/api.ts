@@ -4,7 +4,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, options)
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(text || `Request failed: ${res.status}`)
+    let msg = `Request failed: ${res.status}`
+    try { msg = JSON.parse(text).error || msg } catch {}
+    throw new Error(msg)
   }
   return res.json()
 }

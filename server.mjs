@@ -395,6 +395,15 @@ function getAccountsView() {
   return Object.keys(store.accounts).sort().map((slot) => sanitizeAccount(slot, store.accounts[slot]));
 }
 
+function findDuplicateSlot(store, accountId, email, excludeSlot) {
+  for (const [slot, acct] of Object.entries(store.accounts)) {
+    if (slot === excludeSlot || !acct) continue;
+    if (accountId && acct.accountId === accountId) return slot;
+    if (email && acct.email === email) return slot;
+  }
+  return null;
+}
+
 async function parseBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
@@ -553,6 +562,12 @@ async function handleApi(req, res, url) {
       const creds = await exchangeAuthorizationCode(code, pending.verifier);
       const profile = getTokenProfile(creds.access);
       const store = loadStore();
+      const dupSlot = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
+      if (dupSlot) {
+        pendingLogins.delete(state);
+        json(res, 409, { ok: false, error: `Этот аккаунт уже подключён в ${dupSlot}` });
+        return true;
+      }
       store.accounts[pending.slot] = {
         slot: pending.slot,
         access: creds.access,
@@ -597,6 +612,11 @@ async function handleAuthCallback(req, res, url) {
     const creds = await exchangeAuthorizationCode(code, pending.verifier);
     const profile = getTokenProfile(creds.access);
     const store = loadStore();
+    const dupSlot = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
+    if (dupSlot) {
+      pendingLogins.delete(state);
+      return sendHtml(res, 409, `<!doctype html><html><head><meta charset="utf-8"><title>Duplicate</title><style>body{font-family:system-ui;margin:40px;background:#0b1020;color:#e6edf3}a{color:#8ab4ff}</style></head><body><h1>Аккаунт уже подключён</h1><p>Этот аккаунт уже используется в <b>${dupSlot}</b>.</p><p><a href="/">Вернуться в dashboard</a></p></body></html>`);
+    }
     store.accounts[pending.slot] = {
       slot: pending.slot,
       access: creds.access,
