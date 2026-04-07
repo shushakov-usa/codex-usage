@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 export function AccountCard({ account }: { account: Account }) {
   const refreshSlot = useRefreshSlot()
   const windows = account.usage?.windows ?? []
-  const wShort = windows.find(w => w.label === '5h')
+  const wShort = windows.find(w => /^\d+h$/.test(w.label))
   const wLong = windows.find(w => w !== wShort)
   const plan = account.usage?.plan ?? account.planTypeFromJwt
 
@@ -42,7 +42,7 @@ export function AccountCard({ account }: { account: Account }) {
 
       <div className="space-y-2.5 mb-3 flex-1">
         {wShort && <QuotaBlock window={wShort} label={`${wShort.label} Quota`} />}
-        {wLong && <QuotaBlock window={wLong} label={wLong.label === 'Week' ? 'Weekly Quota' : `${wLong.label} Quota`} />}
+        {wLong && <QuotaBlock window={wLong} label={wLong.label === 'Week' ? 'Weekly Quota' : wLong.label === 'Day' ? 'Daily Quota' : `${wLong.label} Quota`} />}
         {!windows.length && (
           <div className="text-sm text-text-muted py-2">No usage data yet</div>
         )}

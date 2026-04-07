@@ -30,7 +30,7 @@ export function History() {
         .filter(s => s.accounts[account.slot])
         .map(s => {
           const acct = s.accounts[account.slot]
-          const wShort = acct.windows.find(w => w.label === '5h')
+          const wShort = acct.windows.find(w => /^\d+h$/.test(w.label))
           const wLong = acct.windows.find(w => w !== wShort)
           return {
             time: s.timestamp,

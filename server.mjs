@@ -194,10 +194,14 @@ function getTokenProfile(accessToken) {
   };
 }
 
+function normalizeWindowLabel(windowHours) {
+  if (windowHours >= 168) return 'Week';
+  if (windowHours >= 24) return 'Day';
+  return `${windowHours}h`;
+}
+
 function resolveSecondaryWindowLabel({ windowHours, secondaryResetAt, primaryResetAt }) {
   const WEEKLY_RESET_GAP_SECONDS = 3 * 24 * 60 * 60;
-  if (windowHours >= 168) return 'Week';
-  if (windowHours < 24) return `${windowHours}h`;
   if (
     typeof secondaryResetAt === 'number' &&
     typeof primaryResetAt === 'number' &&
@@ -205,7 +209,7 @@ function resolveSecondaryWindowLabel({ windowHours, secondaryResetAt, primaryRes
   ) {
     return 'Week';
   }
-  return 'Day';
+  return normalizeWindowLabel(windowHours);
 }
 
 function toUsageSnapshot(data) {
@@ -214,7 +218,7 @@ function toUsageSnapshot(data) {
     const pw = data.rate_limit.primary_window;
     const windowHours = Math.round((pw.limit_window_seconds || 10800) / 3600);
     windows.push({
-      label: `${windowHours}h`,
+      label: normalizeWindowLabel(windowHours),
       usedPercent: Number(pw.used_percent || 0),
       resetAt: pw.reset_at ? pw.reset_at * 1000 : null,
     });
