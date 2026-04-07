@@ -357,14 +357,17 @@ async function refreshUsageForSlot(slot) {
     working.usage = usage;
     working.lastCheckedAt = Date.now();
     working.lastError = null;
-    store.accounts[slot] = working;
-    saveStore(store);
+    // Reload store to avoid overwriting parallel slot updates
+    const freshStore = loadStore();
+    freshStore.accounts[slot] = working;
+    saveStore(freshStore);
     return { ok: true, account: sanitizeAccount(slot, working) };
   } catch (err) {
     working.lastError = String(err?.message || err);
     working.lastCheckedAt = Date.now();
-    store.accounts[slot] = working;
-    saveStore(store);
+    const freshStore = loadStore();
+    freshStore.accounts[slot] = working;
+    saveStore(freshStore);
     return { ok: false, error: working.lastError, account: sanitizeAccount(slot, working) };
   }
 }
