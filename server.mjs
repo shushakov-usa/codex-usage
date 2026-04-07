@@ -33,28 +33,15 @@ const CONTENT_TYPES = {
 
 const pendingLogins = new Map();
 
-let proxyDispatcher = null;
-if (OPENAI_PROXY) {
-  try {
-    const { ProxyAgent } = requireFromOpenClaw('undici');
-    proxyDispatcher = new ProxyAgent(OPENAI_PROXY);
-    console.log(`Using OpenAI proxy: ${OPENAI_PROXY}`);
-  } catch (err) {
-    console.warn(`ProxyAgent unavailable: ${String(err?.message || err)}`);
-  }
-}
-if (!proxyDispatcher && (process.env.http_proxy || process.env.https_proxy)) {
-  try {
-    const { EnvHttpProxyAgent } = requireFromOpenClaw('undici');
-    proxyDispatcher = new EnvHttpProxyAgent();
-    console.log(`Using env proxy: ${process.env.https_proxy || process.env.http_proxy}`);
-  } catch (err) {
-    console.warn(`EnvHttpProxyAgent unavailable: ${String(err?.message || err)}`);
-  }
-}
+const undici = requireFromOpenClaw('undici');
+const PROXY_URL = OPENAI_PROXY || process.env.https_proxy || process.env.http_proxy || '';
+const proxyDispatcher = PROXY_URL ? new undici.ProxyAgent(PROXY_URL) : null;
+if (proxyDispatcher) console.log(`Proxy: ${PROXY_URL}`);
 
 function fetchOpenAI(url, options = {}) {
-  return fetch(url, proxyDispatcher ? { ...options, dispatcher: proxyDispatcher } : options);
+  return proxyDispatcher
+    ? undici.fetch(url, { ...options, dispatcher: proxyDispatcher })
+    : globalThis.fetch(url, options);
 }
 
 function ensureStore() {
