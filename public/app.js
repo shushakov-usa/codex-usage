@@ -1,6 +1,7 @@
 const cardsEl = document.getElementById('cards');
 const tpl = document.getElementById('cardTpl');
 const refreshAllBtn = document.getElementById('refreshAllBtn');
+const addSlotBtn = document.getElementById('addSlotBtn');
 
 function fmtDate(ts) {
   if (!ts) return '—';
@@ -91,6 +92,20 @@ function renderAccount(account) {
     await reload();
   });
 
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Удалить';
+  deleteBtn.className = 'danger';
+  deleteBtn.addEventListener('click', async () => {
+    if (account.connected) {
+      alert('Сначала отключите аккаунт');
+      return;
+    }
+    if (!confirm(`Удалить ${account.slot}?`)) return;
+    await fetch(`/api/accounts/${account.slot}/delete`, { method: 'POST' });
+    await reload();
+  });
+  node.querySelector('.buttons').appendChild(deleteBtn);
+
   return node;
 }
 
@@ -102,6 +117,16 @@ async function reload() {
     cardsEl.appendChild(renderAccount(account));
   }
 }
+
+addSlotBtn.addEventListener('click', async () => {
+  addSlotBtn.disabled = true;
+  try {
+    await fetch('/api/accounts/create', { method: 'POST' });
+    await reload();
+  } finally {
+    addSlotBtn.disabled = false;
+  }
+});
 
 refreshAllBtn.addEventListener('click', async () => {
   refreshAllBtn.disabled = true;

@@ -22,7 +22,6 @@ const USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
 const REDIRECT_URI = 'http://localhost:1455/auth/callback';
 const SCOPE = 'openid profile email offline_access';
 const JWT_CLAIM_PATH = 'https://api.openai.com/auth';
-const SLOTS = ['slot1', 'slot2', 'slot3'];
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -52,7 +51,7 @@ function ensureStore() {
   if (!fs.existsSync(STORE_PATH)) {
     fs.writeFileSync(
       STORE_PATH,
-      JSON.stringify({ version: 1, accounts: { slot1: null, slot2: null, slot3: null } }, null, 2) + '\n',
+      JSON.stringify({ version: 1, accounts: {} }, null, 2) + '\n',
       'utf8',
     );
   }
@@ -62,10 +61,7 @@ function loadStore() {
   ensureStore();
   const raw = fs.readFileSync(STORE_PATH, 'utf8');
   const parsed = JSON.parse(raw || '{}');
-  parsed.accounts ||= { slot1: null, slot2: null, slot3: null };
-  for (const slot of SLOTS) {
-    if (!(slot in parsed.accounts)) parsed.accounts[slot] = null;
-  }
+  parsed.accounts ||= {};
   return parsed;
 }
 
@@ -332,7 +328,7 @@ function sanitizeAccount(slot, account) {
 
 function getAccountsView() {
   const store = loadStore();
-  return SLOTS.map((slot) => sanitizeAccount(slot, store.accounts[slot]));
+  return Object.keys(store.accounts).sort().map((slot) => sanitizeAccount(slot, store.accounts[slot]));
 }
 
 async function parseBody(req) {
@@ -353,20 +349,37 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === 'POST' && url.pathname === '/api/refresh-all') {
+    const store = loadStore();
     const results = [];
-    for (const slot of SLOTS) {
+    for (const slot of Object.keys(store.accounts)) {
       results.push(await refreshUsageForSlot(slot));
     }
     return json(res, 200, { ok: true, results, accounts: getAccountsView() });
   }
 
-  const slotMatch = url.pathname.match(/^\/api\/accounts\/(slot[123])\/(login|refresh|logout)$/);
+  if (req.method === 'POST' && url.pathname === '/api/accounts/create') {
+    const store = loadStore();
+    const existing = Object.keys(store.accounts)
+      .map(s => parseInt(s.replace('slot', ''), 10))
+      .filter(n => !isNaN(n));
+    const next = existing.length ? Math.max(...existing) + 1 : 1;
+    const slotName = `slot${next}`;
+    store.accounts[slotName] = null;
+    saveStore(store);
+    return json(res, 200, { ok: true, slot: slotName, accounts: getAccountsView() });
+  }
+
+  const slotMatch = url.pathname.match(/^\/api\/accounts\/(slot\d+)\/(login|refresh|logout|delete)$/);
   if (!slotMatch) return false;
 
   const [, slot, action] = slotMatch;
-  if (!SLOTS.includes(slot)) {
-    json(res, 404, { ok: false, error: 'Unknown slot' });
-    return true;
+
+  if (action !== 'login') {
+    const store = loadStore();
+    if (!(slot in store.accounts)) {
+      json(res, 404, { ok: false, error: 'Unknown slot' });
+      return true;
+    }
   }
 
   if (req.method !== 'POST') {
@@ -411,6 +424,18 @@ async function handleApi(req, res, url) {
     store.accounts[slot] = null;
     saveStore(store);
     json(res, 200, { ok: true, slot, account: sanitizeAccount(slot, null) });
+    return true;
+  }
+
+  if (action === 'delete') {
+    const store = loadStore();
+    if (store.accounts[slot]) {
+      json(res, 400, { ok: false, error: 'Сначала отключите аккаунт' });
+      return true;
+    }
+    delete store.accounts[slot];
+    saveStore(store);
+    json(res, 200, { ok: true, slot, accounts: getAccountsView() });
     return true;
   }
 
