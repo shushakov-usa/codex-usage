@@ -398,8 +398,8 @@ function getAccountsView() {
 function findDuplicateSlot(store, accountId, email, excludeSlot) {
   for (const [slot, acct] of Object.entries(store.accounts)) {
     if (slot === excludeSlot || !acct) continue;
-    if (accountId && acct.accountId === accountId) return slot;
-    if (email && acct.email === email) return slot;
+    if (accountId && acct.accountId === accountId) return { slot, email: acct.email };
+    if (email && acct.email === email) return { slot, email: acct.email };
   }
   return null;
 }
@@ -562,10 +562,10 @@ async function handleApi(req, res, url) {
       const creds = await exchangeAuthorizationCode(code, pending.verifier);
       const profile = getTokenProfile(creds.access);
       const store = loadStore();
-      const dupSlot = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
-      if (dupSlot) {
+      const dup = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
+      if (dup) {
         pendingLogins.delete(state);
-        json(res, 409, { ok: false, error: `Этот аккаунт уже подключён в ${dupSlot}` });
+        json(res, 409, { ok: false, error: `Этот аккаунт уже подключён (${dup.email || dup.slot})` });
         return true;
       }
       store.accounts[pending.slot] = {
@@ -612,10 +612,10 @@ async function handleAuthCallback(req, res, url) {
     const creds = await exchangeAuthorizationCode(code, pending.verifier);
     const profile = getTokenProfile(creds.access);
     const store = loadStore();
-    const dupSlot = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
-    if (dupSlot) {
+    const dup = findDuplicateSlot(store, creds.accountId, profile.email, pending.slot);
+    if (dup) {
       pendingLogins.delete(state);
-      return sendHtml(res, 409, `<!doctype html><html><head><meta charset="utf-8"><title>Duplicate</title><style>body{font-family:system-ui;margin:40px;background:#0b1020;color:#e6edf3}a{color:#8ab4ff}</style></head><body><h1>Аккаунт уже подключён</h1><p>Этот аккаунт уже используется в <b>${dupSlot}</b>.</p><p><a href="/">Вернуться в dashboard</a></p></body></html>`);
+      return sendHtml(res, 409, `<!doctype html><html><head><meta charset="utf-8"><title>Duplicate</title><style>body{font-family:system-ui;margin:40px;background:#0b1020;color:#e6edf3}a{color:#8ab4ff}</style></head><body><h1>Аккаунт уже подключён</h1><p>Этот аккаунт уже используется (${dup.email || dup.slot}).</p><p><a href="/">Вернуться в dashboard</a></p></body></html>`);
     }
     store.accounts[pending.slot] = {
       slot: pending.slot,

@@ -30,15 +30,12 @@ export function History() {
         .filter(s => s.accounts[account.slot])
         .map(s => {
           const acct = s.accounts[account.slot]
-          const w5h = acct.windows.find(w => w.label?.includes('h'))
-          const wWeek = acct.windows.find(w =>
-            w.label?.toLowerCase().includes('week') ||
-            w.label?.toLowerCase().includes('day')
-          )
+          const wShort = acct.windows.find(w => w.label === '5h')
+          const wLong = acct.windows.find(w => w !== wShort)
           return {
             time: s.timestamp,
-            '5h': w5h ? Math.max(0, 100 - w5h.usedPercent) : null,
-            Weekly: wWeek ? Math.max(0, 100 - wWeek.usedPercent) : null,
+            Short: wShort ? Math.max(0, 100 - wShort.usedPercent) : null,
+            Weekly: wLong ? Math.max(0, 100 - wLong.usedPercent) : null,
           }
         })
       return { email: account.email ?? account.slot, points }
@@ -133,7 +130,8 @@ export function History() {
                     />
                     <Line
                       type="monotone"
-                      dataKey="5h"
+                      dataKey="Short"
+                      name="5h"
                       stroke="#22c55e"
                       strokeWidth={2}
                       dot={false}

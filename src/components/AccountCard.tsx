@@ -9,10 +9,8 @@ import { toast } from 'sonner'
 export function AccountCard({ account }: { account: Account }) {
   const refreshSlot = useRefreshSlot()
   const windows = account.usage?.windows ?? []
-  const w5h = windows.find(w => w.label?.includes('h'))
-  const wWeek = windows.find(w =>
-    w.label?.toLowerCase().includes('week') || w.label?.toLowerCase().includes('day')
-  )
+  const wShort = windows.find(w => w.label === '5h')
+  const wLong = windows.find(w => w !== wShort)
   const plan = account.usage?.plan ?? account.planTypeFromJwt
 
   const handleRefresh = async () => {
@@ -24,7 +22,7 @@ export function AccountCard({ account }: { account: Account }) {
   }
 
   return (
-    <article className="bg-surface rounded-xl p-4 hover:bg-surface-hover transition-colors duration-150">
+    <article className="bg-surface rounded-xl p-4 hover:bg-surface-hover transition-colors duration-150 flex flex-col min-h-[340px]">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] font-semibold truncate">
@@ -42,9 +40,9 @@ export function AccountCard({ account }: { account: Account }) {
         </div>
       </div>
 
-      <div className="space-y-2.5 mb-3">
-        {w5h && <QuotaBlock window={w5h} label="5h Quota" />}
-        {wWeek && <QuotaBlock window={wWeek} label="Weekly Quota" />}
+      <div className="space-y-2.5 mb-3 flex-1">
+        {wShort && <QuotaBlock window={wShort} label={`${wShort.label} Quota`} />}
+        {wLong && <QuotaBlock window={wLong} label={wLong.label === 'Week' ? 'Weekly Quota' : `${wLong.label} Quota`} />}
         {!windows.length && (
           <div className="text-sm text-text-muted py-2">No usage data yet</div>
         )}
