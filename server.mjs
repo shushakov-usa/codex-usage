@@ -2,12 +2,11 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const requireFromOpenClaw = createRequire('/home/old/src/openclaw/package.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'accounts.json');
@@ -33,14 +32,13 @@ const CONTENT_TYPES = {
 
 const pendingLogins = new Map();
 
-const undici = requireFromOpenClaw('undici');
 const PROXY_URL = OPENAI_PROXY || process.env.https_proxy || process.env.http_proxy || '';
-const proxyDispatcher = PROXY_URL ? new undici.ProxyAgent(PROXY_URL) : null;
+const proxyDispatcher = PROXY_URL ? new ProxyAgent(PROXY_URL) : null;
 if (proxyDispatcher) console.log(`Proxy: ${PROXY_URL}`);
 
 function fetchOpenAI(url, options = {}) {
   return proxyDispatcher
-    ? undici.fetch(url, { ...options, dispatcher: proxyDispatcher })
+    ? undiciFetch(url, { ...options, dispatcher: proxyDispatcher })
     : globalThis.fetch(url, options);
 }
 
