@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,18 +11,18 @@
     <header class="topbar">
       <div>
         <h1>Codex Usage Dashboard</h1>
-        <p>ChatGPT/Codex subscription аккаунты</p>
+        <p>ChatGPT / Codex subscription accounts</p>
       </div>
       <div class="actions">
-        <button id="addSlotBtn">+ Добавить слот</button>
-        <button id="refreshAllBtn">Обновить все</button>
+        <button id="addSlotBtn">+ Add Slot</button>
+        <button id="refreshAllBtn">Refresh All</button>
       </div>
     </header>
 
     <section class="grid" id="cards"></section>
 
     <section class="note">
-      <p><b>Важно:</b> логин открывает ChatGPT OAuth для выбранного слота. Токены хранятся локально в <code>data/accounts.json</code>.</p>
+      <p><b>Note:</b> Login opens ChatGPT OAuth for the selected slot. Tokens are stored locally in <code>data/accounts.json</code>.</p>
     </section>
   </main>
 
@@ -41,9 +41,9 @@
       <div class="error"></div>
 
       <div class="row buttons">
-        <button data-action="login">Логин</button>
-        <button data-action="refresh">Обновить</button>
-        <button data-action="logout" class="danger">Выйти</button>
+        <button data-action="login">Login</button>
+        <button data-action="refresh">Refresh</button>
+        <button data-action="logout" class="danger">Logout</button>
       </div>
     </article>
   </template>

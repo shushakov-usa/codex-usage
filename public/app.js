@@ -8,11 +8,6 @@ function fmtDate(ts) {
   return new Date(ts).toLocaleString();
 }
 
-function fmtPercent(used) {
-  const left = Math.max(0, 100 - Number(used || 0));
-  return { used: Number(used || 0).toFixed(0), left: left.toFixed(0) };
-}
-
 function kv(label, value) {
   const div = document.createElement('div');
   div.className = 'kv';
@@ -28,7 +23,15 @@ function shortAccountId(value) {
 function accountLabel(account) {
   if (account.email) return account.email;
   if (account.accountId) return `ID ${shortAccountId(account.accountId)}`;
-  return 'Не подключён';
+  return 'Not connected';
+}
+
+function usageColor(usedPercent) {
+  const p = Math.min(100, Math.max(0, Number(usedPercent || 0))) / 100;
+  const r = Math.round(46 + (255 - 46) * p);
+  const g = Math.round(204 - (204 - 107) * p);
+  const b = Math.round(113 - (113 - 107) * p);
+  return `rgb(${r},${g},${b})`;
 }
 
 function renderAccount(account) {
@@ -42,30 +45,27 @@ function renderAccount(account) {
 
   title.textContent = account.slot;
   accountTitle.textContent = accountLabel(account);
-  badge.textContent = account.connected ? 'подключён' : 'пусто';
+  badge.textContent = account.connected ? 'connected' : 'empty';
   badge.classList.add(account.connected ? 'connected' : 'empty');
 
-  meta.appendChild(kv('ID', shortAccountId(account.accountId)));
-  meta.appendChild(kv('Тариф', account.usage?.plan || account.planTypeFromJwt || '—'));
-  meta.appendChild(kv('Токен до', fmtDate(account.expires)));
-  meta.appendChild(kv('Проверен', fmtDate(account.lastCheckedAt)));
+  meta.appendChild(kv('Plan', account.usage?.plan || account.planTypeFromJwt || '—'));
+  meta.appendChild(kv('Checked', fmtDate(account.lastCheckedAt)));
 
   const windows = account.usage?.windows || [];
   if (windows.length) {
     for (const w of windows) {
-      const { used, left } = fmtPercent(w.usedPercent);
+      const left = Math.max(0, 100 - Number(w.usedPercent || 0));
       const box = document.createElement('div');
       box.className = 'window';
       box.innerHTML = `
-        <div class="kv"><span class="label">${w.label}</span><span>${left}% left</span></div>
-        <div class="kv"><span class="label">Used</span><span>${used}%</span></div>
+        <div class="kv"><span class="label">${w.label}</span><span>${left.toFixed(0)}% left</span></div>
         <div class="kv"><span class="label">Reset</span><span>${fmtDate(w.resetAt)}</span></div>
-        <div class="progress"><span style="width:${Math.min(100, Math.max(0, Number(w.usedPercent || 0)))}%"></span></div>
+        <div class="progress"><span style="width:${left.toFixed(0)}%; background:${usageColor(w.usedPercent)}"></span></div>
       `;
       usage.appendChild(box);
     }
   } else {
-    usage.appendChild(kv('Usage', account.connected ? 'ещё не запрошен' : '—'));
+    usage.appendChild(kv('Usage', account.connected ? 'not fetched yet' : '—'));
   }
 
   error.textContent = account.lastError || '';
@@ -85,7 +85,7 @@ function renderAccount(account) {
     const box = document.createElement('div');
     box.className = 'callback-paste';
     box.innerHTML = `
-      <p>После авторизации вставьте URL из адресной строки:</p>
+      <p>After authorization, paste the URL from the address bar:</p>
       <div class="paste-row">
         <input type="text" placeholder="http://localhost:1455/auth/callback?code=…" />
         <button>OK</button>
@@ -128,25 +128,25 @@ function renderAccount(account) {
       await reload();
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Обновить';
+      btn.textContent = 'Refresh';
     }
   });
 
   node.querySelector('[data-action="logout"]').addEventListener('click', async () => {
-    if (!confirm(`Очистить ${account.slot}?`)) return;
+    if (!confirm(`Clear ${account.slot}?`)) return;
     await fetch(`/api/accounts/${account.slot}/logout`, { method: 'POST' });
     await reload();
   });
 
   const deleteBtn = document.createElement('button');
-  deleteBtn.textContent = 'Удалить';
+  deleteBtn.textContent = 'Delete';
   deleteBtn.className = 'danger';
   deleteBtn.addEventListener('click', async () => {
     if (account.connected) {
-      alert('Сначала отключите аккаунт');
+      alert('Logout first');
       return;
     }
-    if (!confirm(`Удалить ${account.slot}?`)) return;
+    if (!confirm(`Delete ${account.slot}?`)) return;
     await fetch(`/api/accounts/${account.slot}/delete`, { method: 'POST' });
     await reload();
   });
@@ -177,7 +177,7 @@ addSlotBtn.addEventListener('click', async () => {
 refreshAllBtn.addEventListener('click', async () => {
   refreshAllBtn.disabled = true;
   const original = refreshAllBtn.textContent;
-  refreshAllBtn.textContent = '⏳ Обновляю…';
+  refreshAllBtn.textContent = '⏳ Refreshing…';
   try {
     const cards = cardsEl.querySelectorAll('.card');
     const promises = [...cards].map(async (card) => {
@@ -188,7 +188,7 @@ refreshAllBtn.addEventListener('click', async () => {
       try {
         await fetch(`/api/accounts/${slot}/refresh`, { method: 'POST' });
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Обновить'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Refresh'; }
       }
     });
     await Promise.all(promises);

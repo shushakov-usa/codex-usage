@@ -109,7 +109,8 @@ body {
 .progress > span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #5dade2, #8e44ad);
+  border-radius: inherit;
+  transition: width 0.3s ease;
 }
 .buttons {
   flex-wrap: nowrap;
