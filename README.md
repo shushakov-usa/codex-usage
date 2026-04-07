@@ -1,58 +1,59 @@
 # Codex Usage Dashboard
 
-Локальный web app для мониторинга ChatGPT/Codex subscription аккаунтов.
+Self-hosted web app for monitoring ChatGPT / Codex subscription accounts.
 
-Что умеет:
-- хранить произвольное количество OAuth-профилей (динамические слоты)
-- логинить каждый аккаунт через ChatGPT OAuth
-- обновлять access token через refresh token
-- запрашивать usage из `https://chatgpt.com/backend-api/wham/usage`
-- показывать лимиты по всем аккаунтам в одной таблице
+Features:
+- Dynamic OAuth account slots (add/remove)
+- Login via ChatGPT OAuth
+- Auto-refresh access tokens (every 4 hours)
+- Usage data from `https://chatgpt.com/backend-api/wham/usage`
+- All accounts on a single dashboard
 
-## Запуск
+## Setup
 
 ```bash
+npm install
 npm start
 ```
 
-Или с параметрами:
+With custom port:
 
 ```bash
 PORT=1455 npm start
 ```
 
-## Переменные окружения
+## Environment Variables
 
-| Переменная | По умолчанию | Описание |
+| Variable | Default | Description |
 |---|---|---|
-| `PORT` | `1455` | Порт сервера |
-| `HOST` | `127.0.0.1` | Адрес для прослушивания |
-| `OPENAI_PROXY` | _(не задан)_ | HTTP-прокси для запросов к OpenAI (приоритетный) |
-| `https_proxy` / `http_proxy` | _(не задан)_ | Стандартные env-прокси (используются если `OPENAI_PROXY` не задан) |
+| `PORT` | `1455` | Server port |
+| `HOST` | `127.0.0.1` | Bind address |
+| `OPENAI_PROXY` | _(unset)_ | HTTP proxy for OpenAI requests (takes priority) |
+| `https_proxy` / `http_proxy` | _(unset)_ | Standard env proxy (used when `OPENAI_PROXY` is not set) |
 
-### Прокси
+### Proxy
 
-Запросы к OpenAI API (`auth.openai.com`, `chatgpt.com`) идут через прокси.
-Приоритет: `OPENAI_PROXY` → `https_proxy` → `http_proxy`.
+OpenAI API requests (`auth.openai.com`, `chatgpt.com`) are routed through the proxy.
+Priority: `OPENAI_PROXY` → `https_proxy` → `http_proxy`.
 
-Используется `undici.fetch` с `ProxyAgent` (глобальный `fetch` в Node 25 не поддерживает
-сторонние dispatcher'ы из-за конфликта версий undici).
+Uses `undici.fetch` with `ProxyAgent` (global `fetch` in Node 25 does not support
+third-party dispatchers due to undici version mismatch).
 
-## OAuth и доступ через домен
+## OAuth & Remote Access
 
-OAuth redirect URI привязан к `http://localhost:$PORT/auth/callback` (ограничение Codex OAuth client).
+OAuth redirect URI is bound to `http://localhost:$PORT/auth/callback` (Codex OAuth client restriction).
 
-Если дашборд работает на сервере за доменом, авторизация через localhost не попадёт обратно
-в браузер. В этом случае используйте ручную вставку callback URL: после OAuth авторизации
-скопируйте URL из адресной строки браузера и вставьте в поле на странице дашборда.
+When the dashboard runs on a remote server behind a domain, the localhost redirect won't reach
+the browser. Use the manual callback URL paste feature: after OAuth authorization, copy the URL
+from the browser address bar and paste it into the input field on the dashboard page.
 
-## Важно
+## Notes
 
-- Токены хранятся локально в `data/accounts.json`.
-- Файл с токенами добавлен в `.gitignore`.
+- Tokens are stored locally in `data/accounts.json`.
+- The token file is in `.gitignore`.
 
-## Структура
+## Structure
 
-- `server.mjs` — backend + OAuth callback + API
+- `server.mjs` — backend, OAuth callback, API
 - `public/` — web UI
-- `data/accounts.json` — локальное хранилище профилей
+- `data/accounts.json` — local account storage
