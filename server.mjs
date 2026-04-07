@@ -317,7 +317,6 @@ function sanitizeAccount(slot, account) {
     slot,
     connected: true,
     email: account.email || null,
-    emailMasked: maskEmail(account.email),
     accountId: account.accountId || null,
     planTypeFromJwt: account.planTypeFromJwt || null,
     usage: account.usage || null,

@@ -26,7 +26,6 @@ function shortAccountId(value) {
 }
 
 function accountLabel(account) {
-  if (account.emailMasked) return account.emailMasked;
   if (account.email) return account.email;
   if (account.accountId) return `ID ${shortAccountId(account.accountId)}`;
   return 'Не подключён';
