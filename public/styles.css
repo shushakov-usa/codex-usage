@@ -1,0 +1,179 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1020;
+  --panel: #131a2a;
+  --panel-2: #192235;
+  --text: #e6edf3;
+  --muted: #9fb0c3;
+  --good: #2ecc71;
+  --warn: #f1c40f;
+  --bad: #ff6b6b;
+  --line: #2c3850;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.topbar h1 { margin: 0 0 6px; }
+.topbar p { margin: 0; color: var(--muted); }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.headerRow {
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+.headerText {
+  min-width: 0;
+}
+.slotTitle { margin: 0; font-size: 20px; }
+.accountTitle {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  word-break: break-word;
+}
+.statusBadge {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.statusBadge.connected { color: var(--good); border-color: rgba(46,204,113,.35); }
+.statusBadge.empty { color: var(--warn); border-color: rgba(241,196,15,.35); }
+.meta, .usage, .error {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.kv .label {
+  color: var(--muted);
+  min-width: 88px;
+}
+.kv .value {
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.window {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+}
+.progress {
+  height: 10px;
+  border-radius: 999px;
+  background: #0e1524;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-top: 6px;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #5dade2, #8e44ad);
+}
+.buttons {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+button {
+  background: #24324a;
+  color: var(--text);
+  border: 1px solid #334867;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.08); }
+button.danger { border-color: rgba(255,107,107,.4); color: #ffb3b3; }
+.error {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: #ffb3b3;
+  font-size: 13px;
+}
+.note {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 14px;
+}
+code { color: #b3d4ff; }
+
+@media (max-width: 640px) {
+  .wrap {
+    padding: 14px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .statusBadge {
+    align-self: flex-start;
+  }
+
+  .kv {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .kv .value {
+    text-align: left;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .buttons button,
+  .actions button {
+    width: 100%;
+  }
+}

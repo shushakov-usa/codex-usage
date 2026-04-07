@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Codex Usage Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div>
+        <h1>Codex Usage Dashboard</h1>
+        <p>3 независимых ChatGPT/Codex subscription аккаунта</p>
+      </div>
+      <div class="actions">
+        <button id="refreshAllBtn">Обновить все</button>
+      </div>
+    </header>
+
+    <section class="grid" id="cards"></section>
+
+    <section class="note">
+      <p><b>Важно:</b> логин открывает ChatGPT OAuth для выбранного слота. Токены хранятся локально в <code>data/accounts.json</code>.</p>
+    </section>
+  </main>
+
+  <template id="cardTpl">
+    <article class="card">
+      <div class="row headerRow">
+        <div class="headerText">
+          <h2 class="slotTitle"></h2>
+          <div class="accountTitle"></div>
+        </div>
+        <span class="statusBadge"></span>
+      </div>
+
+      <div class="meta"></div>
+      <div class="usage"></div>
+      <div class="error"></div>
+
+      <div class="row buttons">
+        <button data-action="login">Логин</button>
+        <button data-action="refresh">Обновить</button>
+        <button data-action="logout" class="danger">Выйти</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
