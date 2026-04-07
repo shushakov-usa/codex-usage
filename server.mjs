@@ -580,3 +580,19 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`Codex Usage Dashboard: http://${HOST}:${PORT}`);
 });
+
+const AUTO_REFRESH_MS = 4 * 60 * 60 * 1000;
+
+async function autoRefreshAll() {
+  const store = loadStore();
+  const connected = Object.keys(store.accounts).filter(s => store.accounts[s]?.refresh);
+  if (!connected.length) return;
+  console.log(`Auto-refresh: ${connected.length} account(s)`);
+  const results = await Promise.all(connected.map(s => refreshAndFetchUsage(s)));
+  const ok = results.filter(r => r.ok).length;
+  const fail = results.filter(r => !r.ok).length;
+  console.log(`Auto-refresh done: ${ok} ok, ${fail} failed`);
+}
+
+setInterval(autoRefreshAll, AUTO_REFRESH_MS);
+setTimeout(autoRefreshAll, 10_000);
