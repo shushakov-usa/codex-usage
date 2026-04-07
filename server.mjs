@@ -353,10 +353,8 @@ async function handleApi(req, res, url) {
 
   if (req.method === 'POST' && url.pathname === '/api/refresh-all') {
     const store = loadStore();
-    const results = [];
-    for (const slot of Object.keys(store.accounts)) {
-      results.push(await refreshUsageForSlot(slot));
-    }
+    const slots = Object.keys(store.accounts);
+    const results = await Promise.all(slots.map((slot) => refreshUsageForSlot(slot)));
     return json(res, 200, { ok: true, results, accounts: getAccountsView() });
   }
 

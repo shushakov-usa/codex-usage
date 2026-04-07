@@ -82,8 +82,16 @@ function renderAccount(account) {
   });
 
   node.querySelector('[data-action="refresh"]').addEventListener('click', async () => {
-    await fetch(`/api/accounts/${account.slot}/refresh`, { method: 'POST' });
-    await reload();
+    const btn = node.querySelector('[data-action="refresh"]');
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    try {
+      await fetch(`/api/accounts/${account.slot}/refresh`, { method: 'POST' });
+      await reload();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Обновить';
+    }
   });
 
   node.querySelector('[data-action="logout"]').addEventListener('click', async () => {
@@ -130,11 +138,14 @@ addSlotBtn.addEventListener('click', async () => {
 
 refreshAllBtn.addEventListener('click', async () => {
   refreshAllBtn.disabled = true;
+  const original = refreshAllBtn.textContent;
+  refreshAllBtn.textContent = '⏳ Обновляю…';
   try {
     await fetch('/api/refresh-all', { method: 'POST' });
     await reload();
   } finally {
     refreshAllBtn.disabled = false;
+    refreshAllBtn.textContent = original;
   }
 });
 
