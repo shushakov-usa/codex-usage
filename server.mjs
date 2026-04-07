@@ -10,6 +10,10 @@ const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.join(__dirname, 'dist');
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'accounts.json');
+const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
+const HISTORY_PATH = path.join(DATA_DIR, 'history.json');
+const DEFAULT_SETTINGS = { refreshInterval: 300 };
+const MAX_HISTORY_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const PORT = Number(process.env.PORT || 1455);
 const HOST = process.env.HOST || '127.0.0.1';
 const OPENAI_PROXY = process.env.OPENAI_PROXY || '';
@@ -64,6 +68,68 @@ function loadStore() {
 function saveStore(store) {
   ensureStore();
   fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2) + '\n', 'utf8');
+}
+
+function loadSettings() {
+  ensureStore();
+  try {
+    if (fs.existsSync(SETTINGS_PATH)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+    }
+  } catch {}
+  return { ...DEFAULT_SETTINGS };
+}
+
+function saveSettings(settings) {
+  ensureStore();
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+}
+
+function loadHistory() {
+  try {
+    if (fs.existsSync(HISTORY_PATH)) {
+      return JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf8'));
+    }
+  } catch {}
+  return { snapshots: [] };
+}
+
+function saveHistory(history) {
+  fs.writeFileSync(HISTORY_PATH, JSON.stringify(history) + '\n', 'utf8');
+}
+
+function appendSnapshot() {
+  const history = loadHistory();
+  const now = Date.now();
+
+  // Don't store more than one snapshot per 5 minutes
+  const lastTs = history.snapshots.length > 0
+    ? history.snapshots[history.snapshots.length - 1].timestamp
+    : 0;
+  if (now - lastTs < 5 * 60 * 1000) return;
+
+  const store = loadStore();
+  const accounts = {};
+  for (const [slot, account] of Object.entries(store.accounts)) {
+    if (!account || !account.usage) continue;
+    accounts[slot] = {
+      email: account.email || null,
+      windows: (account.usage.windows || []).map(w => ({
+        label: w.label,
+        usedPercent: w.usedPercent,
+      })),
+    };
+  }
+
+  if (Object.keys(accounts).length > 0) {
+    history.snapshots.push({ timestamp: now, accounts });
+  }
+
+  // Prune entries older than 30 days
+  const cutoff = now - MAX_HISTORY_AGE_MS;
+  history.snapshots = history.snapshots.filter(s => s.timestamp > cutoff);
+
+  saveHistory(history);
 }
 
 function json(res, status, data) {
@@ -347,6 +413,7 @@ async function handleApi(req, res, url) {
     const store = loadStore();
     const slots = Object.keys(store.accounts);
     const results = await Promise.all(slots.map((slot) => refreshUsageForSlot(slot)));
+    appendSnapshot();
     return json(res, 200, { ok: true, results, accounts: getAccountsView() });
   }
 
@@ -360,6 +427,32 @@ async function handleApi(req, res, url) {
     store.accounts[slotName] = null;
     saveStore(store);
     return json(res, 200, { ok: true, slot: slotName, accounts: getAccountsView() });
+  }
+
+  if (url.pathname === '/api/settings') {
+    if (req.method === 'GET') {
+      return json(res, 200, loadSettings());
+    }
+    if (req.method === 'PUT') {
+      const body = await parseBody(req);
+      const interval = Number(body.refreshInterval);
+      if (isNaN(interval) || interval < 0) {
+        return json(res, 400, { ok: false, error: 'Invalid refreshInterval' });
+      }
+      const settings = { refreshInterval: interval };
+      saveSettings(settings);
+      startAutoRefresh();
+      return json(res, 200, { ok: true, ...settings });
+    }
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/history') {
+    const range = url.searchParams.get('range') || '24h';
+    const rangeMs = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 }[range] || 86400000;
+    const cutoff = Date.now() - rangeMs;
+    const history = loadHistory();
+    const filtered = history.snapshots.filter(s => s.timestamp > cutoff);
+    return json(res, 200, { snapshots: filtered });
   }
 
   const slotMatch = url.pathname.match(/^\/api\/accounts\/(slot\d+)\/(login|refresh|logout|delete|exchange)$/);
@@ -579,8 +672,6 @@ server.listen(PORT, HOST, () => {
   console.log(`Codex Usage Dashboard: http://${HOST}:${PORT}`);
 });
 
-const AUTO_REFRESH_MS = 4 * 60 * 60 * 1000;
-
 async function autoRefreshAll() {
   const store = loadStore();
   const connected = Object.keys(store.accounts).filter(s => store.accounts[s]?.refresh);
@@ -592,5 +683,28 @@ async function autoRefreshAll() {
   console.log(`Auto-refresh done: ${ok} ok, ${fail} failed`);
 }
 
-setInterval(autoRefreshAll, AUTO_REFRESH_MS);
-setTimeout(autoRefreshAll, 10_000);
+let autoRefreshTimer = null;
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = null;
+  const settings = loadSettings();
+  const interval = settings.refreshInterval * 1000;
+  if (interval <= 0) {
+    console.log('Auto-refresh: disabled');
+    return;
+  }
+  console.log(`Auto-refresh: every ${settings.refreshInterval}s`);
+  autoRefreshTimer = setInterval(async () => {
+    await autoRefreshAll();
+    appendSnapshot();
+  }, interval);
+}
+
+// Initial refresh 10s after startup
+setTimeout(async () => {
+  await autoRefreshAll();
+  appendSnapshot();
+}, 10_000);
+
+startAutoRefresh();
