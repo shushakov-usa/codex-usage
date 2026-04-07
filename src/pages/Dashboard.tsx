@@ -1,4 +1,4 @@
-import { useAccounts } from '../lib/hooks'
+import { useAccounts, useLiveRefresh } from '../lib/hooks'
 import { TopBar } from '../components/TopBar'
 import { AccountCard } from '../components/AccountCard'
 import { EmptyCard } from '../components/EmptyCard'
@@ -6,6 +6,7 @@ import { AddCard } from '../components/AddCard'
 
 export function Dashboard() {
   const { data, isLoading } = useAccounts()
+  useLiveRefresh()
   const accounts = data?.accounts ?? []
 
   return (

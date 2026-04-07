@@ -12,7 +12,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'accounts.json');
 const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 const HISTORY_PATH = path.join(DATA_DIR, 'history.json');
-const DEFAULT_SETTINGS = { refreshInterval: 300 };
+const DEFAULT_SETTINGS = { liveInterval: 30, backgroundInterval: 300 };
 const MAX_HISTORY_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const PORT = Number(process.env.PORT || 1455);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -75,7 +75,17 @@ function loadSettings() {
   ensureStore();
   try {
     if (fs.existsSync(SETTINGS_PATH)) {
-      return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+      const raw = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+      // Migrate legacy refreshInterval → liveInterval + backgroundInterval
+      if ('refreshInterval' in raw && !('liveInterval' in raw)) {
+        const migrated = {
+          liveInterval: raw.refreshInterval || 30,
+          backgroundInterval: raw.backgroundInterval || 300,
+        };
+        saveSettings(migrated);
+        return migrated;
+      }
+      return { ...DEFAULT_SETTINGS, ...raw };
     }
   } catch {}
   return { ...DEFAULT_SETTINGS };
@@ -476,14 +486,25 @@ async function handleApi(req, res, url) {
     }
     if (req.method === 'PUT') {
       const body = await parseBody(req);
-      const interval = Number(body.refreshInterval);
-      if (isNaN(interval) || interval < 0) {
-        return json(res, 400, { ok: false, error: 'Invalid refreshInterval' });
+      const current = loadSettings();
+      const updated = { ...current };
+      if ('liveInterval' in body) {
+        const v = Number(body.liveInterval);
+        if (isNaN(v) || v < 0) return json(res, 400, { ok: false, error: 'Invalid liveInterval' });
+        updated.liveInterval = v;
       }
-      const settings = { refreshInterval: interval };
-      saveSettings(settings);
+      if ('backgroundInterval' in body) {
+        const v = Number(body.backgroundInterval);
+        if (isNaN(v) || v < 60) return json(res, 400, { ok: false, error: 'backgroundInterval must be >= 60' });
+        updated.backgroundInterval = v;
+      }
+      // Migrate legacy field
+      if ('refreshInterval' in body && !('liveInterval' in body) && !('backgroundInterval' in body)) {
+        updated.liveInterval = Number(body.refreshInterval) || 30;
+      }
+      saveSettings(updated);
       startAutoRefresh();
-      return json(res, 200, { ok: true, ...settings });
+      return json(res, 200, { ok: true, ...updated });
     }
   }
 
@@ -741,12 +762,12 @@ function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = null;
   const settings = loadSettings();
-  const interval = settings.refreshInterval * 1000;
+  const interval = (settings.backgroundInterval || 300) * 1000;
   if (interval <= 0) {
-    console.log('Auto-refresh: disabled');
+    console.log('Background refresh: disabled');
     return;
   }
-  console.log(`Auto-refresh: every ${settings.refreshInterval}s`);
+  console.log(`Background refresh: every ${settings.backgroundInterval || 300}s`);
   autoRefreshTimer = setInterval(async () => {
     await autoRefreshAll();
     appendSnapshot();

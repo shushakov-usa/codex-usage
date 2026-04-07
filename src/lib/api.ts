@@ -47,7 +47,7 @@ export const exchangeCallback = (slot: string, url: string) => request<{ ok: boo
 
 export const fetchSettings = () => request<Settings>('/api/settings')
 
-export const updateSettings = (settings: Settings) => request<Settings>(
+export const updateSettings = (settings: Partial<Settings>) => request<Settings>(
   '/api/settings', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

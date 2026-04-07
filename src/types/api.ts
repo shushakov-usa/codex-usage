@@ -34,7 +34,8 @@ export interface AccountsResponse {
 }
 
 export interface Settings {
-  refreshInterval: number
+  liveInterval: number
+  backgroundInterval: number
 }
 
 export interface HistorySnapshot {

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
 import * as api from './api'
 import type { AccountsResponse, Settings, HistoryResponse } from '../types/api'
 
@@ -82,7 +83,34 @@ export function useExchangeCallback() {
 export function useUpdateSettings() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: api.updateSettings,
+    mutationFn: (partial: Partial<Settings>) => api.updateSettings(partial),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
   })
+}
+
+/** Client-side live refresh: calls /api/refresh-all at liveInterval when page is open */
+export function useLiveRefresh() {
+  const { data: settings } = useSettings()
+  const qc = useQueryClient()
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const intervalSec = settings?.liveInterval ?? 30
+
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = null
+
+    if (intervalSec <= 0) return
+
+    timerRef.current = setInterval(async () => {
+      try {
+        await api.refreshAll()
+        qc.invalidateQueries({ queryKey: ['accounts'] })
+        qc.invalidateQueries({ queryKey: ['history'] })
+      } catch {}
+    }, intervalSec * 1000)
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [intervalSec, qc])
 }
