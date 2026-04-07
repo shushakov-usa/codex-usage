@@ -36,6 +36,7 @@ function usageColor(usedPercent) {
 
 function renderAccount(account) {
   const node = tpl.content.firstElementChild.cloneNode(true);
+  node.dataset.slot = account.slot;
   const title = node.querySelector('.slotTitle');
   const accountTitle = node.querySelector('.accountTitle');
   const badge = node.querySelector('.statusBadge');
@@ -43,12 +44,12 @@ function renderAccount(account) {
   const usage = node.querySelector('.usage');
   const error = node.querySelector('.error');
 
-  title.textContent = account.slot;
-  accountTitle.textContent = accountLabel(account);
+  title.textContent = accountLabel(account);
+  const plan = account.usage?.plan || account.planTypeFromJwt || '';
+  accountTitle.textContent = plan;
   badge.textContent = account.connected ? 'connected' : 'empty';
   badge.classList.add(account.connected ? 'connected' : 'empty');
 
-  meta.appendChild(kv('Plan', account.usage?.plan || account.planTypeFromJwt || '—'));
   meta.appendChild(kv('Checked', fmtDate(account.lastCheckedAt)));
 
   const windows = account.usage?.windows || [];
@@ -181,7 +182,7 @@ refreshAllBtn.addEventListener('click', async () => {
   try {
     const cards = cardsEl.querySelectorAll('.card');
     const promises = [...cards].map(async (card) => {
-      const slot = card.querySelector('.slotTitle')?.textContent;
+      const slot = card.dataset.slot;
       if (!slot) return;
       const btn = card.querySelector('[data-action="refresh"]');
       if (btn) { btn.disabled = true; btn.textContent = '⏳'; }

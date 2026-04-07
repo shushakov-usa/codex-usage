@@ -169,7 +169,7 @@ function toUsageSnapshot(data) {
   let plan = data?.plan_type || null;
   if (data?.credits?.balance !== undefined && data?.credits?.balance !== null) {
     const balance = typeof data.credits.balance === 'number' ? data.credits.balance : Number(data.credits.balance || 0);
-    plan = plan ? `${plan} ($${balance.toFixed(2)})` : `$${balance.toFixed(2)}`;
+    if (balance > 0) plan = plan ? `${plan} ($${balance.toFixed(2)})` : `$${balance.toFixed(2)}`;
   }
   return { plan, windows, raw: data };
 }
