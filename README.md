@@ -33,6 +33,12 @@ With custom port:
 PORT=1455 npm start
 ```
 
+Install deps, rebuild, and start in one command:
+
+```bash
+npm run start:setup
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |

@@ -374,7 +374,8 @@ async function refreshUsageForSlot(slot) {
   try {
     const needsTokenRefresh = !working.access
       || Date.now() >= Number(working.expires || 0)
-      || (working.entitlement && !('activeUntil' in working.entitlement));
+      || working.entitlement == null
+      || !('activeUntil' in working.entitlement);
     if (needsTokenRefresh) {
       working = await refreshAccount(working);
     }
@@ -626,6 +627,7 @@ async function handleApi(req, res, url) {
         accountId: creds.accountId,
         email: profile.email,
         planTypeFromJwt: profile.planTypeFromJwt,
+        entitlement: creds.entitlement || null,
         usage: null,
         updatedAt: Date.now(),
         lastCheckedAt: null,
@@ -675,6 +677,7 @@ async function handleAuthCallback(req, res, url) {
       accountId: creds.accountId,
       email: profile.email,
       planTypeFromJwt: profile.planTypeFromJwt,
+      entitlement: creds.entitlement || null,
       usage: null,
       updatedAt: Date.now(),
       lastCheckedAt: null,
